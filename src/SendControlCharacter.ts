@@ -4,6 +4,12 @@ import { promisify } from 'node:util';
 const execPromise = promisify(exec);
 
 class SendControlCharacter {
+  private _appName: string;
+
+  constructor(appName: string = "iTerm2") {
+    this._appName = appName;
+  }
+
   // This method is added for testing purposes
   protected async executeCommand(command: string): Promise<void> {
     await execPromise(command);
@@ -35,7 +41,7 @@ class SendControlCharacter {
 
     // AppleScript to send the control character
     const ascript = `
-      tell application "iTerm2"
+      tell application "${this._appName}"
         tell front window
           tell current session of current tab
             -- Send the control character

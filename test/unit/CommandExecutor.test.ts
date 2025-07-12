@@ -9,9 +9,9 @@ jest.mock('node:child_process', () => ({
 }));
 jest.mock('../../src/TtyOutputReader.js', () => ({
   __esModule: true,
-  default: {
+  default: jest.fn().mockImplementation(() => ({
     retrieveBuffer: jest.fn().mockResolvedValue('Mocked terminal output')
-  }
+  }))
 }));
 jest.mock('node:fs', () => ({
   openSync: jest.fn().mockReturnValue(1),
@@ -33,7 +33,6 @@ describe('CommandExecutor', () => {
     // Dynamically import after mocks
     CommandExecutor = (await import('../../src/CommandExecutor.js')).default;
     TtyOutputReader = (await import('../../src/TtyOutputReader.js')).default;
-    jest.spyOn(TtyOutputReader, 'retrieveBuffer').mockResolvedValue('Mocked terminal output');
     mockExecPromiseFn.mockImplementation((command) => {
       if (command.includes('get tty')) {
         return Promise.resolve({ stdout: '/dev/ttys000\n', stderr: '' });
@@ -43,8 +42,8 @@ describe('CommandExecutor', () => {
         return Promise.resolve({ stdout: '', stderr: '' });
       }
     });
-    // Inject the mockExecPromiseFn into CommandExecutor
-    commandExecutor = new CommandExecutor(mockExecPromiseFn);
+    // Inject the mockExecPromiseFn into CommandExecutor with default app name and mock function
+    commandExecutor = new CommandExecutor("iTerm2", mockExecPromiseFn);
   });
 
   test('executeCommand passes the command to execPromise', async () => {

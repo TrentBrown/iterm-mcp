@@ -18,8 +18,10 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 class CommandExecutor {
   private _execPromise: typeof execPromise;
+  private _appName: string;
 
-  constructor(execPromiseOverride?: typeof execPromise) {
+  constructor(appName: string = "iTerm2", execPromiseOverride?: typeof execPromise) {
+    this._appName = appName;
     this._execPromise = execPromiseOverride || execPromise;
   }
 
@@ -43,10 +45,10 @@ class CommandExecutor {
       if (command.includes('\n')) {
         // For multiline text, we use parentheses around our prepared string expression
         // This allows AppleScript to evaluate the string concatenation expression
-        await this._execPromise(`/usr/bin/osascript -e 'tell application "iTerm2" to tell current session of current window to write text (${escapedCommand})'`);
+        await this._execPromise(`/usr/bin/osascript -e 'tell application "${this._appName}" to tell current session of current window to write text (${escapedCommand})'`);
       } else {
         // For single line commands, we can use the standard approach with quoted strings
-        await this._execPromise(`/usr/bin/osascript -e 'tell application "iTerm2" to tell current session of current window to write text "${escapedCommand}"'`);
+        await this._execPromise(`/usr/bin/osascript -e 'tell application "${this._appName}" to tell current session of current window to write text "${escapedCommand}"'`);
       }
       
       // Wait until iTerm2 reports that command processing is complete
@@ -64,7 +66,8 @@ class CommandExecutor {
       await sleep(200);
       
       // Retrieve the terminal output after command execution
-      const afterCommandBuffer = await TtyOutputReader.retrieveBuffer()
+      const ttyReader = new TtyOutputReader(this._appName);
+      const afterCommandBuffer = await ttyReader.retrieveBuffer()
       return afterCommandBuffer
     } catch (error: unknown) {
       throw new Error(`Failed to execute command: ${(error as Error).message}`);
@@ -194,7 +197,7 @@ class CommandExecutor {
 
   private async retrieveTtyPath(): Promise<string> {
     try {
-      const { stdout } = await this._execPromise(`/usr/bin/osascript -e 'tell application "iTerm2" to tell current session of current window to get tty'`);
+      const { stdout } = await this._execPromise(`/usr/bin/osascript -e 'tell application "${this._appName}" to tell current session of current window to get tty'`);
       return stdout.trim();
     } catch (error: unknown) {
       throw new Error(`Failed to retrieve TTY path: ${(error as Error).message}`);
@@ -203,7 +206,7 @@ class CommandExecutor {
 
   private async isProcessing(): Promise<boolean> {
     try {
-      const { stdout } = await this._execPromise(`/usr/bin/osascript -e 'tell application "iTerm2" to tell current session of current window to get is processing'`);
+      const { stdout } = await this._execPromise(`/usr/bin/osascript -e 'tell application "${this._appName}" to tell current session of current window to get is processing'`);
       return stdout.trim() === 'true';
     } catch (error: unknown) {
       throw new Error(`Failed to check processing status: ${(error as Error).message}`);

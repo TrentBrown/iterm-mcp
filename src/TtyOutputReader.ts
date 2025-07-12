@@ -4,7 +4,13 @@ import { promisify } from 'node:util';
 const execPromise = promisify(exec);
 
 export default class TtyOutputReader {
-  static async call(linesOfOutput?: number) {
+  private _appName: string;
+
+  constructor(appName: string = "iTerm2") {
+    this._appName = appName;
+  }
+
+  async call(linesOfOutput?: number) {
     const buffer = await this.retrieveBuffer();
     if (!linesOfOutput) {
       return buffer;
@@ -13,9 +19,9 @@ export default class TtyOutputReader {
     return lines.slice(-linesOfOutput - 1).join('\n');
   }
 
-  static async retrieveBuffer(): Promise<string> {
+  async retrieveBuffer(): Promise<string> {
     const ascript = `
-      tell application "iTerm2"
+      tell application "${this._appName}"
         tell front window
           tell current session of current tab
             set numRows to number of rows

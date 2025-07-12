@@ -16,8 +16,8 @@ describe('SendControlCharacter', () => {
   let sendControlCharacter: MockSendControlCharacter;
   
   beforeEach(() => {
-    // Initialize our test subject
-    sendControlCharacter = new MockSendControlCharacter();
+    // Initialize our test subject with default app name
+    sendControlCharacter = new MockSendControlCharacter("iTerm2");
     sendControlCharacter.mockExecuteCommand.mockClear();
   });
   

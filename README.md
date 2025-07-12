@@ -1,6 +1,8 @@
 # iterm-mcp 
 A Model Context Protocol server that provides access to your iTerm session.
 
+**New**: Supports configurable iTerm application instances via `--app-name` for multi-agent scenarios.
+
 ![Main Image](.github/images/demo.gif)
 
 ### Features
@@ -52,6 +54,37 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
   }
 }
 ```
+
+### Multiple Instances (for different AI agents)
+
+To avoid conflicts between multiple AI agents, you can run separate iTerm applications and target them individually:
+
+```json
+{
+  "mcpServers": {
+    "iterm-agent1": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "iterm-mcp",
+        "--app-name",
+        "iTerm-Agent1"
+      ]
+    },
+    "iterm-agent2": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "iterm-mcp",
+        "--app-name",
+        "iTerm-Agent2"
+      ]
+    }
+  }
+}
+```
+
+**Note**: You'll need to create named copies of your iTerm application (e.g., duplicate iTerm.app and rename to "iTerm-Agent1.app") for this to work.
 
 ### Installing via Smithery
 
