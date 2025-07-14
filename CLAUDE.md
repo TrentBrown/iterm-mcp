@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-iterm-mcp is a Model Context Protocol (MCP) server that provides direct access to iTerm terminal sessions. It allows AI assistants to execute commands, read terminal output, and send control characters through three main tools: `write_to_terminal`, `read_terminal_output`, and `send_control_character`.
+iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct access to iTerm terminal sessions. It allows AI assistants to execute commands, read terminal output, and send control characters through three main tools: `write_to_terminal`, `read_terminal_output`, and `send_control_character`.
 
 **Key Feature**: Supports configurable iTerm application instances via the `--app-name` argument, enabling multiple MCP servers to target different iTerm clones without interference.
 
@@ -20,8 +20,8 @@ iterm-mcp is a Model Context Protocol (MCP) server that provides direct access t
 - `yarn run e2e` - Run end-to-end tests (requires iTerm2)
 
 ### Usage with Custom Application Names
-- Default: `npx iterm-mcp` (targets "iTerm2")
-- Custom app: `npx iterm-mcp --app-name "iTerm-Agent1"` (targets custom iTerm instance)
+- Default: `npx iterm-mcp-multiple` (targets "iTerm2")
+- Custom app: `npx iterm-mcp-multiple --app-name "iTerm-Agent1"` (targets custom iTerm instance)
 
 ### Debugging
 - `yarn run inspector` - Launch MCP Inspector for debugging the server
@@ -103,7 +103,7 @@ iterm-mcp is a Model Context Protocol (MCP) server that provides direct access t
 
 ### Single Instance (Default)
 ```bash
-npx iterm-mcp
+npx iterm-mcp-multiple
 ```
 
 ### Multiple Instances for Different Agents
@@ -112,11 +112,11 @@ npx iterm-mcp
   "mcpServers": {
     "iterm-agent1": {
       "command": "npx",
-      "args": ["-y", "iterm-mcp", "--app-name", "iTerm-Agent1"]
+      "args": ["-y", "iterm-mcp-multiple", "--app-name", "iTerm-Agent1"]
     },
     "iterm-agent2": {
       "command": "npx", 
-      "args": ["-y", "iterm-mcp", "--app-name", "iTerm-Agent2"]
+      "args": ["-y", "iterm-mcp-multiple", "--app-name", "iTerm-Agent2"]
     }
   }
 }

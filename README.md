@@ -1,5 +1,8 @@
-# iterm-mcp 
+# iterm-mcp-multiple 
 A Model Context Protocol server that provides access to your iTerm session.
+
+## Fork Attribution
+This project is a fork of [iterm-mcp](https://github.com/ferrislucas/iterm-mcp) by [Ferris Lucas](https://github.com/ferrislucas). The original project provides excellent iTerm integration for MCP servers. This fork maintains the same functionality with a different package name to avoid conflicts in multi-agent scenarios.
 
 **New**: Supports configurable iTerm application instances via `--app-name` for multi-agent scenarios.
 
@@ -13,13 +16,13 @@ A Model Context Protocol server that provides access to your iTerm session.
 
 **Full Terminal Control and REPL support:** The model can start and interact with REPL's as well as send control characters like ctrl-c, ctrl-z, etc.
 
-**Easy on the Dependencies:** iterm-mcp is built with minimal dependencies and is runnable via npx. It's designed to be easy to add to Claude Desktop and other MCP clients. It should just work.
+**Easy on the Dependencies:** iterm-mcp-multiple is built with minimal dependencies and is runnable via npx. It's designed to be easy to add to Claude Desktop and other MCP clients. It should just work.
 
 
 ## Safety Considerations
 
 * The user is responsible for using the tool safely.
-* No built-in restrictions: iterm-mcp makes no attempt to evaluate the safety of commands that are executed.
+* No built-in restrictions: iterm-mcp-multiple makes no attempt to evaluate the safety of commands that are executed.
 * Models can behave in unexpected ways. The user is expected to monitor activity and abort when appropriate.
 * For multi-step tasks, you may need to interrupt the model if it goes off track. Start with smaller, focused tasks until you're familiar with how the model behaves. 
 
@@ -44,11 +47,11 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 ```json
 {
   "mcpServers": {
-    "iterm-mcp": {
+    "iterm-mcp-multiple": {
       "command": "npx",
       "args": [
         "-y",
-        "iterm-mcp"
+        "iterm-mcp-multiple"
       ]
     }
   }
@@ -66,7 +69,7 @@ To avoid conflicts between multiple AI agents, you can run separate iTerm applic
       "command": "npx",
       "args": [
         "-y",
-        "iterm-mcp",
+        "iterm-mcp-multiple",
         "--app-name",
         "iTerm-Agent1"
       ]
@@ -75,7 +78,7 @@ To avoid conflicts between multiple AI agents, you can run separate iTerm applic
       "command": "npx",
       "args": [
         "-y", 
-        "iterm-mcp",
+        "iterm-mcp-multiple",
         "--app-name",
         "iTerm-Agent2"
       ]
@@ -91,9 +94,9 @@ To avoid conflicts between multiple AI agents, you can run separate iTerm applic
 To install iTerm for Claude Desktop automatically via [Smithery](https://smithery.ai/server/iterm-mcp):
 
 ```bash
-npx -y @smithery/cli install iterm-mcp --client claude
+npx -y @smithery/cli install iterm-mcp-multiple --client claude
 ```
-[![smithery badge](https://smithery.ai/badge/iterm-mcp)](https://smithery.ai/server/iterm-mcp)
+[![smithery badge](https://smithery.ai/badge/iterm-mcp-multiple)](https://smithery.ai/server/iterm-mcp-multiple)
 
 ## Development
 
