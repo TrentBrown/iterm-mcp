@@ -3,6 +3,7 @@ A Model Context Protocol server that provides access to your iTerm session.
 
 **New**: Supports configurable iTerm application instances via `--app-name` for multi-agent scenarios.
 
+[![smithery badge](https://smithery.ai/badge/iterm-mcp)](https://smithery.ai/server/iterm-mcp)
 ![Main Image](.github/images/demo.gif)
 
 ### Features
@@ -93,7 +94,6 @@ To install iTerm for Claude Desktop automatically via [Smithery](https://smither
 ```bash
 npx -y @smithery/cli install iterm-mcp --client claude
 ```
-[![smithery badge](https://smithery.ai/badge/iterm-mcp)](https://smithery.ai/server/iterm-mcp)
 
 ## Development
 
