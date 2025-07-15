@@ -1,13 +1,16 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
+import { WindowManager } from './WindowManager.js';
 
 const execPromise = promisify(exec);
 
 export default class TtyOutputReader {
-  private _appName: string;
+  private _clientName?: string;
+  private _profileName?: string;
 
-  constructor(appName: string = "iTerm2") {
-    this._appName = appName;
+  constructor(clientName?: string, profileName?: string) {
+    this._clientName = clientName;
+    this._profileName = profileName;
   }
 
   async call(linesOfOutput?: number) {
@@ -20,17 +23,15 @@ export default class TtyOutputReader {
   }
 
   async retrieveBuffer(): Promise<string> {
-    const ascript = `
-      tell application "${this._appName}"
-        tell front window
-          tell current session of current tab
-            set numRows to number of rows
-            set allContent to contents
-            return allContent
-          end tell
-        end tell
-      end tell
-    `;
+    // Ensure window exists if clientName is specified
+    if (this._clientName) {
+      await WindowManager.ensureWindowExists(this._clientName, this._profileName);
+    }
+    
+    const ascript = WindowManager.buildAppleScriptForSession(
+      this._clientName, 
+      'get contents'
+    );
     
     const { stdout: finalContent } = await execPromise(`osascript -e '${ascript}'`);
     return finalContent.trim();

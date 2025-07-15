@@ -11,18 +11,22 @@ import TtyOutputReader from "./TtyOutputReader.js";
 import SendControlCharacter from "./SendControlCharacter.js";
 
 // Parse command line arguments
-function parseArgs(): { appName: string } {
+function parseArgs(): { clientName?: string; profileName?: string } {
   const args = process.argv.slice(2);
-  let appName = "iTerm2"; // Default for backward compatibility
+  let clientName: string | undefined = undefined; // Default uses current window
+  let profileName: string | undefined = undefined; // Default uses default profile
   
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--app-name" && i + 1 < args.length) {
-      appName = args[i + 1];
-      break;
+    if (args[i] === "--client" && i + 1 < args.length) {
+      clientName = args[i + 1];
+      i++; // Skip the next argument since we consumed it
+    } else if (args[i] === "--profile" && i + 1 < args.length) {
+      profileName = args[i + 1];
+      i++; // Skip the next argument since we consumed it
     }
   }
   
-  return { appName };
+  return { clientName, profileName };
 }
 
 const config = parseArgs();
@@ -30,7 +34,7 @@ const config = parseArgs();
 const server = new Server(
   {
     name: "iterm-mcp",
-    version: "0.1.0",
+    version: "1.4.1",
   },
   {
     capabilities: {
@@ -91,8 +95,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
     case "write_to_terminal": {
-      let executor = new CommandExecutor(config.appName);
-      const ttyReader = new TtyOutputReader(config.appName);
+      let executor = new CommandExecutor(config.clientName, config.profileName);
+      const ttyReader = new TtyOutputReader(config.clientName, config.profileName);
       const command = String(request.params.arguments?.command);
       const beforeCommandBuffer = await ttyReader.retrieveBuffer();
       const beforeCommandBufferLines = beforeCommandBuffer.split("\n").length;
@@ -111,7 +115,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
     case "read_terminal_output": {
-      const ttyReader = new TtyOutputReader(config.appName);
+      const ttyReader = new TtyOutputReader(config.clientName, config.profileName);
       const linesOfOutput = Number(request.params.arguments?.linesOfOutput) || 25
       const output = await ttyReader.call(linesOfOutput)
 
@@ -123,7 +127,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
     case "send_control_character": {
-      const ttyControl = new SendControlCharacter(config.appName);
+      const ttyControl = new SendControlCharacter(config.clientName, config.profileName);
       const letter = String(request.params.arguments?.letter);
       await ttyControl.send(letter);
       

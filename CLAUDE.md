@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct access to iTerm terminal sessions. It allows AI assistants to execute commands, read terminal output, and send control characters through three main tools: `write_to_terminal`, `read_terminal_output`, and `send_control_character`.
 
-**Key Feature**: Supports configurable iTerm application instances via the `--app-name` argument, enabling multiple MCP servers to target different iTerm clones without interference.
+**Key Feature**: Supports configurable window targeting via the `--client` argument, enabling multiple MCP servers to target different windows within iTerm2 without interference.
 
 ## Development Commands
 
@@ -19,14 +19,16 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 - `yarn run test:coverage` - Run tests with coverage report
 - `yarn run e2e` - Run end-to-end tests (requires iTerm2)
 
-### Usage with Custom Application Names
-- Default: `npx iterm-mcp-multiple` (targets "iTerm2")
-- Custom app: `npx iterm-mcp-multiple --app-name "iTerm-Agent1"` (targets custom iTerm instance)
+### Usage with Client Windows and Profiles
+- Default: `npx iterm-mcp-multiple` (targets current window with default profile)
+- Custom window: `npx iterm-mcp-multiple --client "Agent1"` (creates window for "Agent1" with default profile)
+- Custom profile: `npx iterm-mcp-multiple --profile "Dark"` (uses current window with "Dark" profile)
+- Both: `npx iterm-mcp-multiple --client "Agent1" --profile "Dark"` (creates "Agent1" window with "Dark" profile)
 
 ### Debugging
 - `yarn run inspector` - Launch MCP Inspector for debugging the server
 - Use MCP Inspector at provided URL for testing tools and debugging
-- For custom apps: `yarn run inspector --app-name "iTerm-Agent1"`
+- For custom windows: `yarn run inspector --client "Agent1" --profile "Dark"`
 
 ### Publishing
 - `yarn run prepublishOnly` - Automatically builds before publishing
@@ -36,22 +38,23 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 ### Core Components
 
 **index.ts** - Main MCP server entry point that:
-- Parses command-line arguments (supports `--app-name` for custom iTerm instances)
+- Parses command-line arguments (supports `--client` for custom window targeting and `--profile` for custom iTerm2 profiles)
 - Sets up the MCP server with three tools
 - Handles tool execution requests
 - Manages server lifecycle and error handling
-- Passes application name to all component instances
+- Passes client name and profile name to all component instances
 
 **CommandExecutor.ts** - Handles command execution via AppleScript:
-- Accepts configurable application name in constructor
-- Executes commands in specified iTerm instance through AppleScript automation
+- Accepts configurable client name and profile name in constructor
+- Executes commands in specified iTerm2 window through AppleScript automation
 - Handles multiline commands with special AppleScript string concatenation
 - Waits for command completion using process tracking and TTY monitoring
 - Manages AppleScript escaping for special characters
+- Creates windows automatically when client name is specified, using specified profile if provided
 
 **TtyOutputReader.ts** - Reads terminal content:
-- Instance-based class accepting application name in constructor
-- Retrieves terminal buffer content via AppleScript from specified iTerm instance
+- Instance-based class accepting client name in constructor
+- Retrieves terminal buffer content via AppleScript from specified iTerm2 window
 - Supports reading specific number of lines from terminal output
 - Returns formatted terminal content for AI consumption
 
@@ -63,15 +66,21 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 - Builds process hierarchy chains for context
 
 **SendControlCharacter.ts** - Sends control sequences:
-- Accepts configurable application name in constructor
-- Sends control characters (Ctrl-C, Ctrl-Z, etc.) to specified iTerm instance
+- Accepts configurable client name in constructor
+- Sends control characters (Ctrl-C, Ctrl-Z, etc.) to specified iTerm2 window
 - Handles special sequences like telnet escape characters
+
+**WindowManager.ts** - Window management utilities:
+- Creates iTerm2 windows with specified names and profiles when they don't exist
+- Provides targeting utilities for AppleScript commands
+- Ensures window exists before performing operations
+- Supports custom iTerm2 profiles for different terminal configurations
 
 ### Key Design Patterns
 
-**AppleScript Integration**: All terminal interaction uses AppleScript to communicate with configurable iTerm instances, requiring careful string escaping and multiline handling.
+**AppleScript Integration**: All terminal interaction uses AppleScript to communicate with iTerm2, requiring careful string escaping and multiline handling.
 
-**Configurable Application Targeting**: All components accept an application name parameter, enabling multiple instances to target different iTerm applications without interference.
+**Configurable Window Targeting**: All components accept a client name parameter, enabling multiple instances to target different iTerm2 windows without interference.
 
 **Process Monitoring**: CommandExecutor waits for command completion by monitoring both the target iTerm's processing state and analyzing active processes via ProcessTracker.
 
@@ -83,7 +92,7 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 - **E2E tests** (`test/e2e/`): Test full integration with actual iTerm instances
 - Jest configuration supports ES modules with TypeScript compilation
 - Coverage excludes main entry point (index.ts)
-- Tests verify both default "iTerm2" behavior and custom application name functionality
+- Tests verify both default current window behavior and custom client window functionality
 
 ## Dependencies
 
@@ -95,9 +104,9 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 ## Platform Requirements
 
 - macOS only (uses AppleScript for iTerm automation)
-- Target iTerm application must be running and accessible
+- iTerm2 application must be running and accessible
 - Requires proper iTerm accessibility permissions
-- Supports multiple named iTerm instances for multi-agent scenarios
+- Supports multiple named windows within iTerm2 for multi-agent scenarios
 
 ## Usage Examples
 
@@ -106,17 +115,21 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 npx iterm-mcp-multiple
 ```
 
-### Multiple Instances for Different Agents
+### Multiple Instances for Different Windows and Profiles
 ```json
 {
   "mcpServers": {
     "iterm-agent1": {
       "command": "npx",
-      "args": ["-y", "iterm-mcp-multiple", "--app-name", "iTerm-Agent1"]
+      "args": ["-y", "iterm-mcp-multiple", "--client", "Agent1", "--profile", "Dark"]
     },
     "iterm-agent2": {
       "command": "npx", 
-      "args": ["-y", "iterm-mcp-multiple", "--app-name", "iTerm-Agent2"]
+      "args": ["-y", "iterm-mcp-multiple", "--client", "Agent2", "--profile", "Light"]
+    },
+    "iterm-dev": {
+      "command": "npx",
+      "args": ["-y", "iterm-mcp-multiple", "--client", "Development", "--profile", "Hotkey Window"]
     }
   }
 }

@@ -4,20 +4,21 @@ import SendControlCharacter from '../../src/SendControlCharacter.js';
 
 async function testExecuteCommand() {
   const executor = new CommandExecutor();
+  const ttyReader = new TtyOutputReader();
   // Combine all arguments after the script name into a single command
   const command = process.argv.slice(2).join(' ') || 'date';
   
   try {
-    const beforeCommandBuffer = await TtyOutputReader.retrieveBuffer();
+    const beforeCommandBuffer = await ttyReader.retrieveBuffer();
     const beforeCommandBufferLines = beforeCommandBuffer.split("\n").length;
 
     await executor.executeCommand(command);
 
-    const afterCommandBuffer = await TtyOutputReader.retrieveBuffer();
+    const afterCommandBuffer = await ttyReader.retrieveBuffer();
     const afterCommandBufferLines = afterCommandBuffer.split("\n").length;
     const outputLines = afterCommandBufferLines - beforeCommandBufferLines
     
-    const buffer = await TtyOutputReader.call(outputLines)
+    const buffer = await ttyReader.call(outputLines)
     console.log(buffer);
 
     console.log(`Lines: ${outputLines}`);
@@ -51,6 +52,7 @@ async function testSendControlCharacter() {
 
 async function testMultilineCommand() {
   const executor = new CommandExecutor();
+  const ttyReader = new TtyOutputReader();
   
   // Create a multiline command
   const multilineText = `for i in {1..5}; do
@@ -65,18 +67,18 @@ done`;
     console.log(multilineText);
     console.log("---");
     
-    const beforeCommandBuffer = await TtyOutputReader.retrieveBuffer();
+    const beforeCommandBuffer = await ttyReader.retrieveBuffer();
     const beforeCommandBufferLines = beforeCommandBuffer.split("\n").length;
 
     await executor.executeCommand(multilineText);
 
-    const afterCommandBuffer = await TtyOutputReader.retrieveBuffer();
+    const afterCommandBuffer = await ttyReader.retrieveBuffer();
     const afterCommandBufferLines = afterCommandBuffer.split("\n").length;
     const outputLines = afterCommandBufferLines - beforeCommandBufferLines;
     
     console.log(`Result: ${outputLines} new lines were output`);
     
-    const buffer = await TtyOutputReader.call(20);
+    const buffer = await ttyReader.call(20);
     console.log("Last 20 lines of output:");
     console.log(buffer);
     

@@ -1,13 +1,16 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
+import { WindowManager } from './WindowManager.js';
 
 const execPromise = promisify(exec);
 
 class SendControlCharacter {
-  private _appName: string;
+  private _clientName?: string;
+  private _profileName?: string;
 
-  constructor(appName: string = "iTerm2") {
-    this._appName = appName;
+  constructor(clientName?: string, profileName?: string) {
+    this._clientName = clientName;
+    this._profileName = profileName;
   }
 
   // This method is added for testing purposes
@@ -16,6 +19,11 @@ class SendControlCharacter {
   }
 
   async send(letter: string): Promise<void> {
+    // Ensure window exists if clientName is specified
+    if (this._clientName) {
+      await WindowManager.ensureWindowExists(this._clientName, this._profileName);
+    }
+    
     let controlCode: number;
     
     // Handle special cases for telnet escape sequences
@@ -40,16 +48,10 @@ class SendControlCharacter {
     }
 
     // AppleScript to send the control character
-    const ascript = `
-      tell application "${this._appName}"
-        tell front window
-          tell current session of current tab
-            -- Send the control character
-            write text (ASCII character ${controlCode})
-          end tell
-        end tell
-      end tell
-    `;
+    const ascript = WindowManager.buildAppleScriptForSession(
+      this._clientName,
+      `write text (ASCII character ${controlCode})`
+    );
 
     try {
       await this.executeCommand(`osascript -e '${ascript}'`);

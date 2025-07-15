@@ -42,8 +42,8 @@ describe('CommandExecutor', () => {
         return Promise.resolve({ stdout: '', stderr: '' });
       }
     });
-    // Inject the mockExecPromiseFn into CommandExecutor with default app name and mock function
-    commandExecutor = new CommandExecutor("iTerm2", mockExecPromiseFn);
+    // Inject the mockExecPromiseFn into CommandExecutor with default client name and mock function
+    commandExecutor = new CommandExecutor(undefined, undefined, mockExecPromiseFn);
   });
 
   test('executeCommand passes the command to execPromise', async () => {

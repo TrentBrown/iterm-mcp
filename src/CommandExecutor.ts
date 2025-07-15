@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 import { openSync, closeSync } from 'node:fs';
 import ProcessTracker from './ProcessTracker.js';
 import TtyOutputReader from './TtyOutputReader.js';
+import { WindowManager } from './WindowManager.js';
 
 /**
  * CommandExecutor handles sending commands to iTerm2 via AppleScript.
@@ -18,11 +19,19 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 class CommandExecutor {
   private _execPromise: typeof execPromise;
-  private _appName: string;
+  private _clientName?: string;
+  private _profileName?: string;
 
-  constructor(appName: string = "iTerm2", execPromiseOverride?: typeof execPromise) {
-    this._appName = appName;
-    this._execPromise = execPromiseOverride || execPromise;
+  constructor(clientName?: string, profileNameOrExecOverride?: string | typeof execPromise, execPromiseOverride?: typeof execPromise) {
+    this._clientName = clientName;
+    
+    // Handle different constructor signatures for backward compatibility
+    if (typeof profileNameOrExecOverride === 'string') {
+      this._profileName = profileNameOrExecOverride;
+      this._execPromise = execPromiseOverride || execPromise;
+    } else {
+      this._execPromise = profileNameOrExecOverride || execPromise;
+    }
   }
 
   /**
@@ -38,17 +47,29 @@ class CommandExecutor {
    * @returns A promise that resolves to the terminal output after command execution
    */
   async executeCommand(command: string): Promise<string> {
+    // Ensure window exists if clientName is specified
+    if (this._clientName) {
+      await WindowManager.ensureWindowExists(this._clientName, this._profileName);
+    }
+    
     const escapedCommand = this.escapeForAppleScript(command);
     
     try {
       // Check if this is a multiline command (which would have been processed differently)
       if (command.includes('\n')) {
         // For multiline text, we use parentheses around our prepared string expression
-        // This allows AppleScript to evaluate the string concatenation expression
-        await this._execPromise(`/usr/bin/osascript -e 'tell application "${this._appName}" to tell current session of current window to write text (${escapedCommand})'`);
+        const ascript = WindowManager.buildAppleScriptForSession(
+          this._clientName,
+          `write text (${escapedCommand})`
+        );
+        await this._execPromise(`/usr/bin/osascript -e '${ascript}'`);
       } else {
         // For single line commands, we can use the standard approach with quoted strings
-        await this._execPromise(`/usr/bin/osascript -e 'tell application "${this._appName}" to tell current session of current window to write text "${escapedCommand}"'`);
+        const ascript = WindowManager.buildAppleScriptForSession(
+          this._clientName,
+          `write text "${escapedCommand}"`
+        );
+        await this._execPromise(`/usr/bin/osascript -e '${ascript}'`);
       }
       
       // Wait until iTerm2 reports that command processing is complete
@@ -66,7 +87,7 @@ class CommandExecutor {
       await sleep(200);
       
       // Retrieve the terminal output after command execution
-      const ttyReader = new TtyOutputReader(this._appName);
+      const ttyReader = new TtyOutputReader(this._clientName, this._profileName);
       const afterCommandBuffer = await ttyReader.retrieveBuffer()
       return afterCommandBuffer
     } catch (error: unknown) {
@@ -197,7 +218,11 @@ class CommandExecutor {
 
   private async retrieveTtyPath(): Promise<string> {
     try {
-      const { stdout } = await this._execPromise(`/usr/bin/osascript -e 'tell application "${this._appName}" to tell current session of current window to get tty'`);
+      const ascript = WindowManager.buildAppleScriptForSession(
+        this._clientName,
+        'get tty'
+      );
+      const { stdout } = await this._execPromise(`/usr/bin/osascript -e '${ascript}'`);
       return stdout.trim();
     } catch (error: unknown) {
       throw new Error(`Failed to retrieve TTY path: ${(error as Error).message}`);
@@ -206,7 +231,11 @@ class CommandExecutor {
 
   private async isProcessing(): Promise<boolean> {
     try {
-      const { stdout } = await this._execPromise(`/usr/bin/osascript -e 'tell application "${this._appName}" to tell current session of current window to get is processing'`);
+      const ascript = WindowManager.buildAppleScriptForSession(
+        this._clientName,
+        'get is processing'
+      );
+      const { stdout } = await this._execPromise(`/usr/bin/osascript -e '${ascript}'`);
       return stdout.trim() === 'true';
     } catch (error: unknown) {
       throw new Error(`Failed to check processing status: ${(error as Error).message}`);
