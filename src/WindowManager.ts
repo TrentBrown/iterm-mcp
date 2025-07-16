@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 
 const execPromise = promisify(exec);
 
-// Store window IDs for each client
+// Store window IDs for each client (for current session)
 const clientWindows = new Map<string, number>();
 
 export class WindowManager {
@@ -50,12 +50,12 @@ export class WindowManager {
         }
     }
 
-    static async ensureWindowExists(clientName: string, profileName?: string): Promise<void> {
+    static async ensureWindowExists(clientName: string, profileName?: string): Promise<{ created: boolean }> {
         try {
             // First ensure iTerm2 is running
             await this.ensureiTermIsRunning();
             
-            // Check if we already have a window for this client
+            // Check if we already have a window for this client (in current MCP session only)
             if (clientWindows.has(clientName)) {
                 const windowId = clientWindows.get(clientName)!;
                 // Verify the window still exists
@@ -72,21 +72,34 @@ export class WindowManager {
                 
                 const { stdout } = await execPromise(`osascript -e '${checkScript}'`);
                 if (stdout.trim() === 'exists') {
-                    return; // Window still exists, we're good
+                    // Window exists, no need to activate it
+                    return { created: false }; // Window still exists
                 } else {
                     clientWindows.delete(clientName); // Clean up stale reference
                 }
             }
             
-            // Create new window for this client with specified profile
+            // Always create new window (no cross-process search)
             const profileClause = profileName ? `profile "${profileName}"` : 'default profile';
             const escapedClientName = clientName.replace(/["\\]/g, '\\$&');
             const createScript = `
                 tell application "iTerm2"
+                    -- Store current frontmost application
+                    tell application "System Events"
+                        set frontApp to name of first application process whose frontmost is true
+                    end tell
+                    
+                    -- Create window without stealing focus
                     set newWindow to (create window with ${profileClause})
                     tell current session of current tab of newWindow
                         set name to "${escapedClientName}"
                     end tell
+                    
+                    -- Return focus to previous application
+                    tell application "System Events"
+                        set frontmost of process frontApp to true
+                    end tell
+                    
                     return id of newWindow
                 end tell
             `;
@@ -94,6 +107,7 @@ export class WindowManager {
             const { stdout } = await execPromise(`osascript -e '${createScript}'`);
             const windowId = parseInt(stdout.trim());
             clientWindows.set(clientName, windowId);
+            return { created: true }; // New window was created
         } catch (error: unknown) {
             throw new Error(`Failed to ensure window exists: ${(error as Error).message}`);
         }
@@ -106,6 +120,7 @@ export class WindowManager {
                 throw new Error(`No window found for client '${clientName}'. Window may have been closed.`);
             }
             
+            // For named windows, just operate on them without activating
             return `tell application "iTerm2" to tell current session of current tab of window id ${windowId} to ${operation}`;
         } else {
             return `tell application "iTerm2" to tell current session of current tab of current window to ${operation}`;

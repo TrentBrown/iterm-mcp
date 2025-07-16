@@ -9,12 +9,14 @@ import {
 import CommandExecutor from "./CommandExecutor.js";
 import TtyOutputReader from "./TtyOutputReader.js";
 import SendControlCharacter from "./SendControlCharacter.js";
+import { WindowManager } from "./WindowManager.js";
 
 // Parse command line arguments
-function parseArgs(): { clientName?: string; profileName?: string } {
+function parseArgs(): { clientName?: string; profileName?: string; createWindowOnly?: boolean } {
   const args = process.argv.slice(2);
   let clientName: string | undefined = undefined; // Default uses current window
   let profileName: string | undefined = undefined; // Default uses default profile
+  let createWindowOnly: boolean = false; // Default starts MCP server
   
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--client" && i + 1 < args.length) {
@@ -23,10 +25,12 @@ function parseArgs(): { clientName?: string; profileName?: string } {
     } else if (args[i] === "--profile" && i + 1 < args.length) {
       profileName = args[i + 1];
       i++; // Skip the next argument since we consumed it
+    } else if (args[i] === "--create-window") {
+      createWindowOnly = true;
     }
   }
   
-  return { clientName, profileName };
+  return { clientName, profileName, createWindowOnly };
 }
 
 const config = parseArgs();
@@ -34,7 +38,7 @@ const config = parseArgs();
 const server = new Server(
   {
     name: "iterm-mcp",
-    version: "1.4.1",
+    version: "1.5.0",
   },
   {
     capabilities: {
@@ -143,12 +147,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
+// Standalone function to create and activate a window
+async function createWindow(clientName: string, profileName?: string) {
+  try {
+    if (!clientName) {
+      console.error("Error: --client parameter is required when using --create-window");
+      process.exit(1);
+    }
+    
+    await WindowManager.ensureWindowExists(clientName, profileName);
+    console.log(`Window created for client: ${clientName}${profileName ? ` with profile: ${profileName}` : ''}`);
+    process.exit(0);
+  } catch (error) {
+    console.error("Error creating window:", error);
+    process.exit(1);
+  }
+}
+
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
 
-main().catch((error) => {
-  console.error("Server error:", error);
-  process.exit(1);
-});
+// Check if we should create a window only or start the MCP server
+if (config.createWindowOnly) {
+  createWindow(config.clientName!, config.profileName);
+} else {
+  main().catch((error) => {
+    console.error("Server error:", error);
+    process.exit(1);
+  });
+}
