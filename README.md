@@ -1,4 +1,5 @@
 # iterm-mcp-multiple 
+[![smithery badge](https://smithery.ai/badge/iterm-mcp-multiple)](https://smithery.ai/server/iterm-mcp-multiple)
 A Model Context Protocol server that provides access to your iTerm session.
 
 ## Fork Attribution
@@ -38,6 +39,14 @@ This project is a fork of [iterm-mcp](https://github.com/ferrislucas/iterm-mcp) 
 
 
 ## Installation
+
+### Installing via Smithery
+
+To install iTerm for Claude Desktop automatically via [Smithery](https://smithery.ai/server/iterm-mcp):
+
+```bash
+npx -y @smithery/cli install iterm-mcp-multiple --client claude
+```
 
 To use with Claude Desktop, add the server config:
 
@@ -89,14 +98,6 @@ To avoid conflicts between multiple AI agents, you can run separate iTerm applic
 
 **Note**: You'll need to create named copies of your iTerm application (e.g., duplicate iTerm.app and rename to "iTerm-Agent1.app") for this to work.
 
-### Installing via Smithery
-
-To install iTerm for Claude Desktop automatically via [Smithery](https://smithery.ai/server/iterm-mcp):
-
-```bash
-npx -y @smithery/cli install iterm-mcp-multiple --client claude
-```
-[![smithery badge](https://smithery.ai/badge/iterm-mcp-multiple)](https://smithery.ai/server/iterm-mcp-multiple)
 
 ## Development
 
