@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct access to iTerm terminal sessions. It allows AI assistants to execute commands, read terminal output, and send control characters through three main tools: `write_to_terminal`, `read_terminal_output`, and `send_control_character`.
 
-**Key Feature**: Supports configurable window targeting via the `--client` argument, enabling multiple MCP servers to target different windows within iTerm2 without interference.
+**Key Feature**: Supports configurable window targeting via the `--agent` argument, enabling multiple MCP servers to target different windows within iTerm2 without interference.
 
 ## Development Commands
 
@@ -19,16 +19,16 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 - `yarn run test:coverage` - Run tests with coverage report
 - `yarn run e2e` - Run end-to-end tests (requires iTerm2)
 
-### Usage with Client Windows and Profiles
+### Usage with Agent Windows and Profiles
 - Default: `npx iterm-mcp-multiple` (targets current window with default profile)
-- Custom window: `npx iterm-mcp-multiple --client "Agent1"` (creates window for "Agent1" with default profile)
+- Custom window: `npx iterm-mcp-multiple --agent "Agent1"` (creates window for "Agent1" with default profile)
 - Custom profile: `npx iterm-mcp-multiple --profile "Dark"` (uses current window with "Dark" profile)
-- Both: `npx iterm-mcp-multiple --client "Agent1" --profile "Dark"` (creates "Agent1" window with "Dark" profile)
+- Both: `npx iterm-mcp-multiple --agent "Agent1" --profile "Dark"` (creates "Agent1" window with "Dark" profile)
 
 ### Debugging
 - `yarn run inspector` - Launch MCP Inspector for debugging the server
 - Use MCP Inspector at provided URL for testing tools and debugging
-- For custom windows: `yarn run inspector --client "Agent1" --profile "Dark"`
+- For custom windows: `yarn run inspector --agent "Agent1" --profile "Dark"`
 
 ### Publishing
 - `yarn run prepublishOnly` - Automatically builds before publishing
@@ -38,22 +38,22 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 ### Core Components
 
 **index.ts** - Main MCP server entry point that:
-- Parses command-line arguments (supports `--client` for custom window targeting and `--profile` for custom iTerm2 profiles)
+- Parses command-line arguments (supports `--agent` for custom window targeting and `--profile` for custom iTerm2 profiles)
 - Sets up the MCP server with three tools
 - Handles tool execution requests
 - Manages server lifecycle and error handling
-- Passes client name and profile name to all component instances
+- Passes agent name and profile name to all component instances
 
 **CommandExecutor.ts** - Handles command execution via AppleScript:
-- Accepts configurable client name and profile name in constructor
+- Accepts configurable agent name and profile name in constructor
 - Executes commands in specified iTerm2 window through AppleScript automation
 - Handles multiline commands with special AppleScript string concatenation
 - Waits for command completion using process tracking and TTY monitoring
 - Manages AppleScript escaping for special characters
-- Creates windows automatically when client name is specified, using specified profile if provided
+- Creates windows automatically when agent name is specified, using specified profile if provided
 
 **TtyOutputReader.ts** - Reads terminal content:
-- Instance-based class accepting client name in constructor
+- Instance-based class accepting agent name in constructor
 - Retrieves terminal buffer content via AppleScript from specified iTerm2 window
 - Supports reading specific number of lines from terminal output
 - Returns formatted terminal content for AI consumption
@@ -66,7 +66,7 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 - Builds process hierarchy chains for context
 
 **SendControlCharacter.ts** - Sends control sequences:
-- Accepts configurable client name in constructor
+- Accepts configurable agent name in constructor
 - Sends control characters (Ctrl-C, Ctrl-Z, etc.) to specified iTerm2 window
 - Handles special sequences like telnet escape characters
 
@@ -80,7 +80,7 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 
 **AppleScript Integration**: All terminal interaction uses AppleScript to communicate with iTerm2, requiring careful string escaping and multiline handling.
 
-**Configurable Window Targeting**: All components accept a client name parameter, enabling multiple instances to target different iTerm2 windows without interference.
+**Configurable Window Targeting**: All components accept an agent name parameter, enabling multiple instances to target different iTerm2 windows without interference.
 
 **Process Monitoring**: CommandExecutor waits for command completion by monitoring both the target iTerm's processing state and analyzing active processes via ProcessTracker.
 
@@ -92,7 +92,7 @@ iterm-mcp-multiple is a Model Context Protocol (MCP) server that provides direct
 - **E2E tests** (`test/e2e/`): Test full integration with actual iTerm instances
 - Jest configuration supports ES modules with TypeScript compilation
 - Coverage excludes main entry point (index.ts)
-- Tests verify both default current window behavior and custom client window functionality
+- Tests verify both default current window behavior and custom agent window functionality
 
 ## Dependencies
 
@@ -121,15 +121,15 @@ npx iterm-mcp-multiple
   "mcpServers": {
     "iterm-agent1": {
       "command": "npx",
-      "args": ["-y", "iterm-mcp-multiple", "--client", "Agent1", "--profile", "Dark"]
+      "args": ["-y", "iterm-mcp-multiple", "--agent", "Agent1", "--profile", "Dark"]
     },
     "iterm-agent2": {
       "command": "npx", 
-      "args": ["-y", "iterm-mcp-multiple", "--client", "Agent2", "--profile", "Light"]
+      "args": ["-y", "iterm-mcp-multiple", "--agent", "Agent2", "--profile", "Light"]
     },
     "iterm-dev": {
       "command": "npx",
-      "args": ["-y", "iterm-mcp-multiple", "--client", "Development", "--profile", "Hotkey Window"]
+      "args": ["-y", "iterm-mcp-multiple", "--agent", "Development", "--profile", "Hotkey Window"]
     }
   }
 }

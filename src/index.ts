@@ -12,15 +12,15 @@ import SendControlCharacter from "./SendControlCharacter.js";
 import { WindowManager } from "./WindowManager.js";
 
 // Parse command line arguments
-function parseArgs(): { clientName?: string; profileName?: string; createWindowOnly?: boolean } {
+function parseArgs(): { agentName?: string; profileName?: string; createWindowOnly?: boolean } {
   const args = process.argv.slice(2);
-  let clientName: string | undefined = undefined; // Default uses current window
+  let agentName: string | undefined = undefined; // Default uses current window
   let profileName: string | undefined = undefined; // Default uses default profile
   let createWindowOnly: boolean = false; // Default starts MCP server
   
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--client" && i + 1 < args.length) {
-      clientName = args[i + 1];
+    if (args[i] === "--agent" && i + 1 < args.length) {
+      agentName = args[i + 1];
       i++; // Skip the next argument since we consumed it
     } else if (args[i] === "--profile" && i + 1 < args.length) {
       profileName = args[i + 1];
@@ -30,7 +30,7 @@ function parseArgs(): { clientName?: string; profileName?: string; createWindowO
     }
   }
   
-  return { clientName, profileName, createWindowOnly };
+  return { agentName, profileName, createWindowOnly };
 }
 
 const config = parseArgs();
@@ -99,8 +99,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
     case "write_to_terminal": {
-      let executor = new CommandExecutor(config.clientName, config.profileName);
-      const ttyReader = new TtyOutputReader(config.clientName, config.profileName);
+      let executor = new CommandExecutor(config.agentName, config.profileName);
+      const ttyReader = new TtyOutputReader(config.agentName, config.profileName);
       const command = String(request.params.arguments?.command);
       const beforeCommandBuffer = await ttyReader.retrieveBuffer();
       const beforeCommandBufferLines = beforeCommandBuffer.split("\n").length;
@@ -119,7 +119,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
     case "read_terminal_output": {
-      const ttyReader = new TtyOutputReader(config.clientName, config.profileName);
+      const ttyReader = new TtyOutputReader(config.agentName, config.profileName);
       const linesOfOutput = Number(request.params.arguments?.linesOfOutput) || 25
       const output = await ttyReader.call(linesOfOutput)
 
@@ -131,7 +131,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
     case "send_control_character": {
-      const ttyControl = new SendControlCharacter(config.clientName, config.profileName);
+      const ttyControl = new SendControlCharacter(config.agentName, config.profileName);
       const letter = String(request.params.arguments?.letter);
       await ttyControl.send(letter);
       
@@ -148,15 +148,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 // Standalone function to create and activate a window
-async function createWindow(clientName: string, profileName?: string) {
+async function createWindow(agentName: string, profileName?: string) {
   try {
-    if (!clientName) {
-      console.error("Error: --client parameter is required when using --create-window");
+    if (!agentName) {
+      console.error("Error: --agent parameter is required when using --create-window");
       process.exit(1);
     }
     
-    await WindowManager.ensureWindowExists(clientName, profileName);
-    console.log(`Window created for client: ${clientName}${profileName ? ` with profile: ${profileName}` : ''}`);
+    await WindowManager.ensureWindowExists(agentName, profileName);
+    console.log(`Window created for agent: ${agentName}${profileName ? ` with profile: ${profileName}` : ''}`);
     process.exit(0);
   } catch (error) {
     console.error("Error creating window:", error);
@@ -171,7 +171,7 @@ async function main() {
 
 // Check if we should create a window only or start the MCP server
 if (config.createWindowOnly) {
-  createWindow(config.clientName!, config.profileName);
+  createWindow(config.agentName!, config.profileName);
 } else {
   main().catch((error) => {
     console.error("Server error:", error);

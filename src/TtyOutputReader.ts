@@ -5,11 +5,11 @@ import { WindowManager } from './WindowManager.js';
 const execPromise = promisify(exec);
 
 export default class TtyOutputReader {
-  private _clientName?: string;
+  private _agentName?: string;
   private _profileName?: string;
 
-  constructor(clientName?: string, profileName?: string) {
-    this._clientName = clientName;
+  constructor(agentName?: string, profileName?: string) {
+    this._agentName = agentName;
     this._profileName = profileName;
   }
 
@@ -23,13 +23,13 @@ export default class TtyOutputReader {
   }
 
   async retrieveBuffer(): Promise<string> {
-    // Ensure window exists if clientName is specified
-    if (this._clientName) {
-      await WindowManager.ensureWindowExists(this._clientName, this._profileName);
+    // Ensure window exists if agentName is specified
+    if (this._agentName) {
+      await WindowManager.ensureWindowExists(this._agentName, this._profileName);
     }
     
     const ascript = WindowManager.buildAppleScriptForSession(
-      this._clientName, 
+      this._agentName, 
       'get contents'
     );
     

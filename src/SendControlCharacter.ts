@@ -5,11 +5,11 @@ import { WindowManager } from './WindowManager.js';
 const execPromise = promisify(exec);
 
 class SendControlCharacter {
-  private _clientName?: string;
+  private _agentName?: string;
   private _profileName?: string;
 
-  constructor(clientName?: string, profileName?: string) {
-    this._clientName = clientName;
+  constructor(agentName?: string, profileName?: string) {
+    this._agentName = agentName;
     this._profileName = profileName;
   }
 
@@ -19,9 +19,9 @@ class SendControlCharacter {
   }
 
   async send(letter: string): Promise<void> {
-    // Ensure window exists if clientName is specified
-    if (this._clientName) {
-      await WindowManager.ensureWindowExists(this._clientName, this._profileName);
+    // Ensure window exists if agentName is specified
+    if (this._agentName) {
+      await WindowManager.ensureWindowExists(this._agentName, this._profileName);
     }
     
     let controlCode: number;
@@ -49,7 +49,7 @@ class SendControlCharacter {
 
     // AppleScript to send the control character
     const ascript = WindowManager.buildAppleScriptForSession(
-      this._clientName,
+      this._agentName,
       `write text (ASCII character ${controlCode})`
     );
 

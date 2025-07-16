@@ -19,11 +19,11 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 class CommandExecutor {
   private _execPromise: typeof execPromise;
-  private _clientName?: string;
+  private _agentName?: string;
   private _profileName?: string;
 
-  constructor(clientName?: string, profileNameOrExecOverride?: string | typeof execPromise, execPromiseOverride?: typeof execPromise) {
-    this._clientName = clientName;
+  constructor(agentName?: string, profileNameOrExecOverride?: string | typeof execPromise, execPromiseOverride?: typeof execPromise) {
+    this._agentName = agentName;
     
     // Handle different constructor signatures for backward compatibility
     if (typeof profileNameOrExecOverride === 'string') {
@@ -47,9 +47,9 @@ class CommandExecutor {
    * @returns A promise that resolves to the terminal output after command execution
    */
   async executeCommand(command: string): Promise<string> {
-    // Ensure window exists if clientName is specified
-    if (this._clientName) {
-      await WindowManager.ensureWindowExists(this._clientName, this._profileName);
+    // Ensure window exists if agentName is specified
+    if (this._agentName) {
+      await WindowManager.ensureWindowExists(this._agentName, this._profileName);
     }
     
     const escapedCommand = this.escapeForAppleScript(command);
@@ -59,14 +59,14 @@ class CommandExecutor {
       if (command.includes('\n')) {
         // For multiline text, we use parentheses around our prepared string expression
         const ascript = WindowManager.buildAppleScriptForSession(
-          this._clientName,
+          this._agentName,
           `write text (${escapedCommand})`
         );
         await this._execPromise(`/usr/bin/osascript -e '${ascript}'`);
       } else {
         // For single line commands, we can use the standard approach with quoted strings
         const ascript = WindowManager.buildAppleScriptForSession(
-          this._clientName,
+          this._agentName,
           `write text "${escapedCommand}"`
         );
         await this._execPromise(`/usr/bin/osascript -e '${ascript}'`);
@@ -87,7 +87,7 @@ class CommandExecutor {
       await sleep(200);
       
       // Retrieve the terminal output after command execution
-      const ttyReader = new TtyOutputReader(this._clientName, this._profileName);
+      const ttyReader = new TtyOutputReader(this._agentName, this._profileName);
       const afterCommandBuffer = await ttyReader.retrieveBuffer()
       return afterCommandBuffer
     } catch (error: unknown) {
@@ -219,7 +219,7 @@ class CommandExecutor {
   private async retrieveTtyPath(): Promise<string> {
     try {
       const ascript = WindowManager.buildAppleScriptForSession(
-        this._clientName,
+        this._agentName,
         'get tty'
       );
       const { stdout } = await this._execPromise(`/usr/bin/osascript -e '${ascript}'`);
@@ -232,7 +232,7 @@ class CommandExecutor {
   private async isProcessing(): Promise<boolean> {
     try {
       const ascript = WindowManager.buildAppleScriptForSession(
-        this._clientName,
+        this._agentName,
         'get is processing'
       );
       const { stdout } = await this._execPromise(`/usr/bin/osascript -e '${ascript}'`);

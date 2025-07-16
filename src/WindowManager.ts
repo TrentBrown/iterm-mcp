@@ -3,8 +3,8 @@ import { promisify } from 'node:util';
 
 const execPromise = promisify(exec);
 
-// Store window IDs for each client (for current session)
-const clientWindows = new Map<string, number>();
+// Store window IDs for each agent (for current session)
+const agentWindows = new Map<string, number>();
 
 export class WindowManager {
     static async ensureiTermIsRunning(): Promise<void> {
@@ -50,14 +50,14 @@ export class WindowManager {
         }
     }
 
-    static async ensureWindowExists(clientName: string, profileName?: string): Promise<{ created: boolean }> {
+    static async ensureWindowExists(agentName: string, profileName?: string): Promise<{ created: boolean }> {
         try {
             // First ensure iTerm2 is running
             await this.ensureiTermIsRunning();
             
-            // Check if we already have a window for this client (in current MCP session only)
-            if (clientWindows.has(clientName)) {
-                const windowId = clientWindows.get(clientName)!;
+            // Check if we already have a window for this agent (in current MCP session only)
+            if (agentWindows.has(agentName)) {
+                const windowId = agentWindows.get(agentName)!;
                 // Verify the window still exists
                 const checkScript = `
                     tell application "iTerm2"
@@ -75,13 +75,13 @@ export class WindowManager {
                     // Window exists, no need to activate it
                     return { created: false }; // Window still exists
                 } else {
-                    clientWindows.delete(clientName); // Clean up stale reference
+                    agentWindows.delete(agentName); // Clean up stale reference
                 }
             }
             
             // Always create new window (no cross-process search)
             const profileClause = profileName ? `profile "${profileName}"` : 'default profile';
-            const escapedClientName = clientName.replace(/["\\]/g, '\\$&');
+            const escapedAgentName = agentName.replace(/["\\]/g, '\\$&');
             const createScript = `
                 tell application "iTerm2"
                     -- Store current frontmost application
@@ -92,7 +92,7 @@ export class WindowManager {
                     -- Create window without stealing focus
                     set newWindow to (create window with ${profileClause})
                     tell current session of current tab of newWindow
-                        set name to "${escapedClientName}"
+                        set name to "${escapedAgentName}"
                     end tell
                     
                     -- Return focus to previous application
@@ -106,18 +106,18 @@ export class WindowManager {
             
             const { stdout } = await execPromise(`osascript -e '${createScript}'`);
             const windowId = parseInt(stdout.trim());
-            clientWindows.set(clientName, windowId);
+            agentWindows.set(agentName, windowId);
             return { created: true }; // New window was created
         } catch (error: unknown) {
             throw new Error(`Failed to ensure window exists: ${(error as Error).message}`);
         }
     }
 
-    static buildAppleScriptForSession(clientName: string | undefined, operation: string): string {
-        if (clientName) {
-            const windowId = clientWindows.get(clientName);
+    static buildAppleScriptForSession(agentName: string | undefined, operation: string): string {
+        if (agentName) {
+            const windowId = agentWindows.get(agentName);
             if (!windowId) {
-                throw new Error(`No window found for client '${clientName}'. Window may have been closed.`);
+                throw new Error(`No window found for agent '${agentName}'. Window may have been closed.`);
             }
             
             // For named windows, just operate on them without activating
